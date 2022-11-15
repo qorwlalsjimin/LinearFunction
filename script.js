@@ -29,6 +29,9 @@ function createModel() {
   // Add an output layer //인공 신경망2
   model.add(tf.layers.dense({units: 1, useBias: true}));
 
+  // Add an output layer //인공 신경망2
+  model.add(tf.layers.dense({units: 1, useBias: true}));
+
   return model;
 }
 
@@ -175,7 +178,7 @@ async function run() { //메인함수
 
    // Train the model
    await trainModel(model, inputs, labels, 300);
-   testModel(model, data, tensorData, 100+200+300);
+   testModel(model, data, tensorData, 100+200+200);
 }
 
 document.addEventListener('DOMContentLoaded', run);
