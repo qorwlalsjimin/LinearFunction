@@ -5,15 +5,15 @@ console.log('Hello TensorFlow');
  * and cleaned of missing data.
  */
 async function getData() {
-  const carsDataResponse = await fetch('https://storage.googleapis.com/tfjs-tutorials/carsData.json');
-  const carsData = await carsDataResponse.json();
-  const cleaned = carsData.map(car => ({
-    mpg: car.Miles_per_Gallon,
-    horsepower: car.Horsepower,
-  }))
-  .filter(car => (car.mpg != null && car.horsepower != null));
-
-  return cleaned;
+    let rawData = [];
+    for(let x = 0; x<=25; x++){
+        let obj = {
+            "x":x,
+            "y":2*x + 1
+        }
+        rawData.push(obj);
+    }
+    return rawData;
 }
 
 //여기에 코드 붙이기
@@ -47,8 +47,8 @@ function convertToTensor(data) { //tensor은 배열 형식으로 만들어짐
     tf.util.shuffle(data);
 
     // Step 2. Convert data to Tensor
-    const inputs = data.map(d => d.horsepower)
-    const labels = data.map(d => d.mpg);
+    const inputs = data.map(d => d.x)
+    const labels = data.map(d => d.y);
 
     const inputTensor = tf.tensor2d(inputs, [inputs.length, 1]);
     const labelTensor = tf.tensor2d(labels, [labels.length, 1]);
@@ -74,7 +74,7 @@ function convertToTensor(data) { //tensor은 배열 형식으로 만들어짐
   });
 }
 
-async function trainModel(model, inputs, labels) {
+async function trainModel(model, inputs, labels, epochs) {
   // Prepare the model for training.
   model.compile({
     optimizer: tf.train.adam(),
@@ -83,7 +83,6 @@ async function trainModel(model, inputs, labels) {
   });
 
   const batchSize = 32;
-  const epochs = 50; //높이면 더 정교하게 할 수 있음
 
   return await model.fit(inputs, labels, {
     batchSize,
@@ -97,7 +96,7 @@ async function trainModel(model, inputs, labels) {
   });
 }
 
-function testModel(model, inputData, normalizationData) {
+function testModel(model, inputData, normalizationData, epochs) {
   const {inputMax, inputMin, labelMin, labelMax} = normalizationData;
 
   // Generate predictions for a uniform range of numbers between 0 and 1;
@@ -125,15 +124,15 @@ function testModel(model, inputData, normalizationData) {
   });
 
   const originalPoints = inputData.map(d => ({
-    x: d.horsepower, y: d.mpg,
+    x: d.x, y: d.y,
   }));
 
   tfvis.render.scatterplot(
-    {name: 'Model Predictions vs Original Data'},
-    {values: [originalPoints, predictedPoints], series: ['original', 'predicted']},
+    {name: `Check prediction data epochs: ${epochs}`},
+    {values: [originalPoints, predictedPoints], series: ['study', 'estimation']},
     {
-      xLabel: 'Horsepower',
-      yLabel: 'MPG',
+      xLabel: 'x',
+      yLabel: 'y',
       height: 300
     }
   );
@@ -143,16 +142,16 @@ async function run() { //메인함수
   // Load and plot the original input data that we are going to train on.
   const data = await getData();
   const values = data.map(d => ({
-    x: d.horsepower,
-    y: d.mpg,
+    x: d.x,
+    y: d.y,
   }));
 
   tfvis.render.scatterplot(
-    {name: 'Horsepower v MPG'},
+    {name: 'y = 2x + 1'},
     {values},
     {
-      xLabel: 'Horsepower',
-      yLabel: 'MPG',
+      xLabel: 'x',
+      yLabel: 'y',
       height: 300
     }
   );
@@ -167,12 +166,16 @@ async function run() { //메인함수
   const {inputs, labels} = tensorData;
 
   // Train the model
-  await trainModel(model, inputs, labels);
-  console.log('Done Training');
+  await trainModel(model, inputs, labels, 100);
+  testModel(model, data, tensorData, 100);
 
-  // Make some predictions using the model and compare them to the
-  // original data
-  testModel(model, data, tensorData);
+   // Train the model
+   await trainModel(model, inputs, labels, 100);
+   testModel(model, data, tensorData, 100+100);
+
+   // Train the model
+   await trainModel(model, inputs, labels, 300);
+   testModel(model, data, tensorData, 100+200+300);
 }
 
 document.addEventListener('DOMContentLoaded', run);
